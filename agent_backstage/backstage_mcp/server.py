@@ -1,60 +1,59 @@
 #!/usr/bin/env python3
 """
-backstage MCP Server
+Backstage MCP Server
 
-This server provides a Model Context Protocol (MCP) interface to the backstage,
-allowing large language models and AI assistants to interact with the service.
+This server provides a Model Context Protocol (MCP) interface to the Backstage API,
+allowing large language models and AI assistants to manage Backstage resources.
 """
 import logging
 import os
+import sys
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 
 # Import tools
-from agent_backstage.backstage.tools import refresh
-from agent_backstage.backstage.tools import entities
-from agent_backstage.backstage.tools import entities_by-refs
-from agent_backstage.backstage.tools import entities_by-query
-from agent_backstage.backstage.tools import entity-facets
-from agent_backstage.backstage.tools import locations
-from agent_backstage.backstage.tools import analyze-location
-from agent_backstage.backstage.tools import validate-entity
+from agent_backstage.backstage_mcp.tools import refresh
+from agent_backstage.backstage_mcp.tools import entities
+from agent_backstage.backstage_mcp.tools import entities_by_refs
+from agent_backstage.backstage_mcp.tools import entities_by_query
+from agent_backstage.backstage_mcp.tools import entity_facets
+from agent_backstage.backstage_mcp.tools import locations
+from agent_backstage.backstage_mcp.tools import analyze_location
+from agent_backstage.backstage_mcp.tools import validate_entity
 
-# Load environment variables
+# Load environment variables from .env file
 load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
 # Create server instance
-mcp = FastMCP("backstage MCP Server")
+mcp = FastMCP("Backstage MCP Server")
 
-# Register tools
 # Register refresh tools
-mcp.tool()(refresh.RefreshEntity)
+mcp.tool()(refresh.refresh_entity)
 
 # Register entities tools
-mcp.tool()(entities.GetEntities)
+mcp.tool()(entities.get_entities)
 
-# Register entities_by-refs tools
-mcp.tool()(entities_by-refs.GetEntitiesByRefs)
+# Register entities_by_refs tools
+mcp.tool()(entities_by_refs.get_entities_by_refs)
 
-# Register entities_by-query tools
-mcp.tool()(entities_by-query.GetEntitiesByQuery)
+# Register entities_by_query tools
+mcp.tool()(entities_by_query.get_entities_by_query)
 
-# Register entity-facets tools
-mcp.tool()(entity-facets.GetEntityFacets)
+# Register entity_facets tools
+mcp.tool()(entity_facets.get_entity_facets)
 
 # Register locations tools
-mcp.tool()(locations.CreateLocation)
-mcp.tool()(locations.GetLocations)
+mcp.tool()(locations.create_location)
+mcp.tool()(locations.get_locations)
 
-# Register analyze-location tools
-mcp.tool()(analyze-location.AnalyzeLocation)
+# Register analyze_location tools
+mcp.tool()(analyze_location.analyze_location)
 
-# Register validate-entity tools
-mcp.tool()(validate-entity.ValidateEntity)
-
+# Register validate_entity tools
+mcp.tool()(validate_entity.validate_entity)
 
 # Start server when run directly
 if __name__ == "__main__":

@@ -2,29 +2,32 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, TypedDict
 from pydantic import BaseModel, Field
 
 class MsgType(str, Enum):
-    """Message types for the agent."""
+    """Message type enum."""
     human = "human"
     assistant = "assistant"
-    system = "system"
 
 class Message(BaseModel):
-    """A message in the conversation."""
+    """Message model."""
     type: MsgType
     content: str
 
-class OutputState(BaseModel):
-    """The output state of the agent."""
+class InputState(BaseModel):
+    """Input state model."""
     messages: List[Message] = Field(default_factory=list)
 
-class BackstageInput(BaseModel):
-    """The input state for the Backstage agent."""
+class OutputState(BaseModel):
+    """Output state model."""
     messages: List[Message] = Field(default_factory=list)
+
+class ConfigSchema(TypedDict):
+    to_upper: bool
+    to_lower: bool
 
 class AgentState(BaseModel):
-    """The state of the agent."""
-    backstage_input: BackstageInput = Field(default_factory=BackstageInput)
+    """Agent state model."""
+    backstage_input: InputState
     backstage_output: Optional[OutputState] = None 
