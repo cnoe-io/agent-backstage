@@ -1,0 +1,25 @@
+"""Model for AnalyzeLocationExistingEntity"""
+
+from typing import Dict, List, Optional
+from datetime import datetime
+from pydantic import BaseModel, Field
+from .base import APIResponse, PaginationInfo
+
+class Analyzelocationexistingentity(BaseModel):
+    """If the folder pointed to already contained catalog info yaml files, they are
+read and emitted like this so that the frontend can inform the user that it
+located them and can make sure to register them as well if they weren't
+already"""
+
+    entity: str
+    isRegistered: bool
+    location: str
+
+class AnalyzelocationexistingentityResponse(APIResponse):
+    """Response model for Analyzelocationexistingentity"""
+    data: Optional[Analyzelocationexistingentity] = None
+
+class AnalyzelocationexistingentityListResponse(APIResponse):
+    """List response model for Analyzelocationexistingentity"""
+    data: List[Analyzelocationexistingentity] = Field(default_factory=list)
+    pagination: Optional[PaginationInfo] = None
