@@ -1,26 +1,18 @@
 # Copyright 2025 CNOE
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import Annotated, TypedDict
-from langgraph.graph import Graph, StateGraph
+from langgraph.graph import StateGraph, START, END
+from langgraph.graph.state import CompiledStateGraph
 from .agent import agent_backstage
 from .state import AgentState
 
-class BackstageState(TypedDict):
-    """The state of the Backstage workflow."""
-    backstage: AgentState
+def build_graph() -> CompiledStateGraph:
+    graph_builder = StateGraph(AgentState)
+    graph_builder.add_node("agent_backstage", agent_backstage)
 
-def create_backstage_graph() -> Graph:
-    """Create the Backstage workflow graph."""
-    workflow = StateGraph(BackstageState)
+    graph_builder.add_edge(START, "agent_backstage")
+    graph_builder.add_edge("agent_backstage", END)
 
-    # Add the Backstage agent node
-    workflow.add_node("backstage", agent_backstage)
+    return graph_builder.compile()
 
-    # Set the entry point
-    workflow.set_entry_point("backstage")
-
-    # Set the exit point
-    workflow.set_finish_point("backstage")
-
-    return workflow.compile() 
+AGENT_GRAPH = build_graph() 

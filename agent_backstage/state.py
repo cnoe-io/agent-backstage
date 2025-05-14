@@ -30,4 +30,5 @@ class ConfigSchema(TypedDict):
 class AgentState(BaseModel):
     """Agent state model."""
     backstage_input: InputState
-    backstage_output: Optional[OutputState] = None 
+    backstage_output: Optional[OutputState] = None
+    config: Optional[ConfigSchema] = None 

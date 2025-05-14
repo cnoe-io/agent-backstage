@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("mcp_tools")
 
 
-async def CreateLocation(dryRun: Optional[str] = None) -> Dict[str, Any]:
+async def create_location(dry_run: Optional[str] = None) -> Dict[str, Any]:
     """
     
     
@@ -23,8 +23,8 @@ async def CreateLocation(dryRun: Optional[str] = None) -> Dict[str, Any]:
     params = {}
     data = None
     # Add parameters to request
-    if dryRun is not None:
-    params["dryRun"] = dryRun
+    if dry_run is not None:
+        params["dryRun"] = dry_run
     success, response = await make_api_request(
         "/locations",
         method="POST",
@@ -36,7 +36,7 @@ async def CreateLocation(dryRun: Optional[str] = None) -> Dict[str, Any]:
         return {"error": response.get('error', 'Request failed')}
     return response
 
-async def GetLocations() -> Dict[str, Any]:
+async def get_locations() -> Dict[str, Any]:
     """
     
     

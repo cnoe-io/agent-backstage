@@ -1,6 +1,20 @@
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+[project]
+name = "agent_backstage"
+version = "0.1.0"
+license = "Apache-2.0"
+description = "A Backstage natural language agent using LangChain, LangGraph, and MCP."
+authors = [
+    { name = "Rehan", email = "rehan@cisco.com" },
+]
+maintainers = [
+    { name = "Rehan", email = "rehan@cisco.com" },
+]
+requires-python = ">=3.12"
+dependencies = [
+    "agntcy-acp>=1.1.3",
+    "langchain-mcp-adapters>=0.0.9",
+    "uv>=0.7.2",
+]
 
 [tool.poetry]
 name = "agent-backstage"
@@ -23,6 +37,7 @@ fastapi = "^0.115.11"
 uvicorn = "^0.34.2"
 uv = "^0.7.2"
 httpx = "^0.27.0"
+httpx-sse = "^0.3.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"
@@ -32,6 +47,9 @@ black = "^23.12.1"
 isort = "^5.13.2"
 mypy = "^1.10.0"
 ruff = "^0.4.6"
+
+[tool.poetry.scripts]
+agent_backstage = "agent_backstage.__main__:run_backstage_agent"
 
 [tool.black]
 line-length = 88
@@ -53,4 +71,8 @@ disallow_incomplete_defs = true
 line-length = 88
 target-version = "py312"
 select = ["E", "F", "B", "I"]
-ignore = [] 
+ignore = []
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api" 

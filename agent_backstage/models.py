@@ -56,4 +56,9 @@ class AgentResponse(BaseModel):
     metadata: AgentResponseMetadata = Field(
         description="""Metadata about the response. Set user_input if the response has user input and \
 corresponding and input fields""",
-    ) 
+    )
+
+class ChatBotQuestion(BaseModel):
+    """Model for chat bot questions."""
+    question: str
+    chat_id: str 

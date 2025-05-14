@@ -73,7 +73,7 @@ if not backstage_token:
 model = AzureChatOpenAI(
     api_key=SecretStr(api_key),
     azure_endpoint=azure_endpoint,
-    model="gpt-4",
+    model="gpt-4o",
     openai_api_type="azure_openai",
     api_version="2024-07-01-preview",
     temperature=0,

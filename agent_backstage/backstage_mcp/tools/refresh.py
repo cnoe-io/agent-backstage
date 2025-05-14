@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("mcp_tools")
 
 
-async def RefreshEntity() -> Dict[str, Any]:
+async def refresh_entity() -> Dict[str, Any]:
     """
     
     

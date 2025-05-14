@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import json
-from agent_pagerduty.models import ChatBotQuestion
+from agent_backstage.models import ChatBotQuestion
 from httpx_sse import ServerSentEvent
 
 import os
@@ -47,7 +47,7 @@ async def run_stateless(question: ChatBotQuestion, process_event):
 
         # Compose input according to the input spec in agent.json
         input_obj = {
-            "pagerduty_input": {
+            "backstage_input": {
                 "messages": [
                     {
                         "type": "human",
@@ -76,9 +76,9 @@ async def run_stateless(question: ChatBotQuestion, process_event):
         else:
             raise Exception(f"ACP Server returned a unsupported response: {run_output}")
         run_state = run_result.values  # type: ignore
-        if run_state.get("pagerduty_output") and "messages" in run_state["pagerduty_output"]:
+        if run_state.get("backstage_output") and "messages" in run_state["backstage_output"]:
             # Extract the assistant message type and content
-            for message in run_state["pagerduty_output"]["messages"]:
+            for message in run_state["backstage_output"]["messages"]:
                 if message["type"] == "assistant":
                     assistant_content = message["content"]
                     event = ServerSentEvent(
@@ -93,7 +93,7 @@ if __name__ == "__main__":
         print(f"Agent: {answer}")
 
     async def chat_interface():
-        print("Start chatting with the PagerDuty agent. Press Ctrl+C to exit.")
+        print("Start chatting with the Backstage agent. Press Ctrl+C to exit.")
         history_file = os.path.expanduser("~/.chat_history")
         try:
             if os.path.exists(history_file):

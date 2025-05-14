@@ -1,4 +1,4 @@
-"""Tools for /entities/by-query operations"""
+"""Tools for /analyze-location operations"""
 
 import logging
 from typing import Dict, Any, Optional, List
@@ -10,26 +10,23 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("mcp_tools")
 
 
-async def GetEntitiesByQuery(fullTextFilterTerm: Optional[str] = None, fullTextFilterFields: Optional[List[str]] = None) -> Dict[str, Any]:
+async def analyze_location() -> Dict[str, Any]:
     """
     
     
-    Search for entities by a given query.
+    Validate a given location.
     
     Returns:
         API response data
     """
-    logger.debug(f"Making GET request to /entities/by-query")
+    logger.debug(f"Making POST request to /analyze-location")
     params = {}
     data = None
     # Add parameters to request
-    if fullTextFilterTerm is not None:
-    params["fullTextFilterTerm"] = fullTextFilterTerm
-if fullTextFilterFields is not None:
-    params["fullTextFilterFields"] = fullTextFilterFields
+    
     success, response = await make_api_request(
-        "/entities/by-query",
-        method="GET",
+        "/analyze-location",
+        method="POST",
         params=params,
         data=data
     )

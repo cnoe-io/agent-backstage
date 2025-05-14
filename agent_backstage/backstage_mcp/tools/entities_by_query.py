@@ -1,4 +1,4 @@
-"""Tools for /entity-facets operations"""
+"""Tools for /entities/by-query operations"""
 
 import logging
 from typing import Dict, Any, Optional, List
@@ -10,23 +10,25 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("mcp_tools")
 
 
-async def GetEntityFacets(facet: List[str]) -> Dict[str, Any]:
+async def get_entities_by_query(full_text_filter_term: Optional[str] = None, full_text_filter_fields: Optional[List[str]] = None) -> Dict[str, Any]:
     """
     
     
-    Get all entity facets that match the given filters.
+    Search for entities by a given query.
     
     Returns:
         API response data
     """
-    logger.debug(f"Making GET request to /entity-facets")
+    logger.debug(f"Making GET request to /entities/by-query")
     params = {}
     data = None
     # Add parameters to request
-    if facet is not None:
-    params["facet"] = facet
+    if full_text_filter_term is not None:
+        params["fullTextFilterTerm"] = full_text_filter_term
+    if full_text_filter_fields is not None:
+        params["fullTextFilterFields"] = full_text_filter_fields
     success, response = await make_api_request(
-        "/entity-facets",
+        "/entities/by-query",
         method="GET",
         params=params,
         data=data

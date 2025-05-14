@@ -13,7 +13,7 @@ from .state import AgentState, Message, MsgType
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-async def main():
+async def run_backstage_agent():
     """Main entry point for the Backstage agent."""
     # Create the workflow graph
     graph = create_backstage_graph()
@@ -37,5 +37,9 @@ async def main():
     logger.info("Workflow completed")
     logger.debug(f"Result: {result}")
 
+def main():
+    """Entry point for the CLI."""
+    asyncio.run(run_backstage_agent())
+
 if __name__ == "__main__":
-    asyncio.run(main()) 
+    main() 

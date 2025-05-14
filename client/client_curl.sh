@@ -18,7 +18,7 @@ curl -X POST "http://localhost:${WFSM_PORT}/api/v0/runs/stateless" \
     -d "{
         \"agent_id\": \"${AGENT_ID}\",
         \"input\": {
-            \"pagerduty_input\": {
+            \"backstage_input\": {
                 \"messages\": [
                     {
                         \"type\": \"human\",

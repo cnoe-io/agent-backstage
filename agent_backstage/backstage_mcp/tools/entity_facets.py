@@ -1,4 +1,4 @@
-"""Tools for /validate-entity operations"""
+"""Tools for /entity-facets operations"""
 
 import logging
 from typing import Dict, Any, Optional, List
@@ -10,23 +10,24 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("mcp_tools")
 
 
-async def ValidateEntity() -> Dict[str, Any]:
+async def get_entity_facets(facet: List[str]) -> Dict[str, Any]:
     """
     
     
-    Validate that a passed in entity has no errors in schema.
+    Get all entity facets that match the given filters.
     
     Returns:
         API response data
     """
-    logger.debug(f"Making POST request to /validate-entity")
+    logger.debug(f"Making GET request to /entity-facets")
     params = {}
     data = None
     # Add parameters to request
-    
+    if facet is not None:
+        params["facet"] = facet
     success, response = await make_api_request(
-        "/validate-entity",
-        method="POST",
+        "/entity-facets",
+        method="GET",
         params=params,
         data=data
     )

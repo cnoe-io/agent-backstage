@@ -5,7 +5,7 @@
 
 add-copyright-license-headers:
 	@echo "Adding copyright license headers..."
-	docker run --rm -v $(shell pwd)/agent_pagerduty:/workspace ghcr.io/google/addlicense:latest -c "CNOE" -l apache -s=only -v /workspace
+	docker run --rm -v $(shell pwd)/agent_backstage:/workspace ghcr.io/google/addlicense:latest -c "CNOE" -l apache -s=only -v /workspace
 
 setup-venv:
 	@echo "======================================="
@@ -33,8 +33,6 @@ setup-venv:
 	@echo " Installing dependencies with Poetry  "
 	@echo "======================================="
 	. .venv/bin/activate && poetry install
-
-
 
 activate-venv:
 	@echo "Activating virtual environment..."
@@ -64,7 +62,7 @@ install:
 
 run: build install
 	@echo "Running the application..."
-	. .venv/bin/activate && . .env && python3 -m agent_pagerduty
+	. .venv/bin/activate && . .env && python3 -m agent_backstage
 
 run-acp: setup-venv build install
 	. .venv/bin/activate && wfsm deploy -m ./deploy/acp/agent.json -e ./deploy/acp/agent-env.yaml

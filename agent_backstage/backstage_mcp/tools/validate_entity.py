@@ -1,4 +1,4 @@
-"""Tools for /entities/by-refs operations"""
+"""Tools for /validate-entity operations"""
 
 import logging
 from typing import Dict, Any, Optional, List
@@ -10,22 +10,22 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("mcp_tools")
 
 
-async def GetEntitiesByRefs() -> Dict[str, Any]:
+async def validate_entity() -> Dict[str, Any]:
     """
     
     
-    Get a batch set of entities given an array of entityRefs.
+    Validate that a passed in entity has no errors in schema.
     
     Returns:
         API response data
     """
-    logger.debug(f"Making POST request to /entities/by-refs")
+    logger.debug(f"Making POST request to /validate-entity")
     params = {}
     data = None
     # Add parameters to request
     
     success, response = await make_api_request(
-        "/entities/by-refs",
+        "/validate-entity",
         method="POST",
         params=params,
         data=data
