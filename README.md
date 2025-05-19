@@ -1,6 +1,6 @@
-# PagerDuty Agent
+# Agent Backstage
 
-This project implements an AI Agent that interacts with PagerDuty using the [langchain-mcp-adapters](https://github.com/langchain-ai/langchain-mcp-adapters) framework and [AGNTCY ACP Protocol](https://github.com/agntcy/acp-sdk), exposing it via an ACP-compatible workflow server.
+This project implements an AI Agent that interacts with various services using the [langchain-mcp-adapters](https://github.com/langchain-ai/langchain-mcp-adapters) framework and [AGNTCY ACP Protocol](https://github.com/agntcy/acp-sdk), exposing it via an ACP-compatible workflow server.
 
 ---
 
@@ -13,7 +13,7 @@ This project implements an AI Agent that interacts with PagerDuty using the [lan
                                                                   |
                                                                   v
 +---------------+     +-----------------------+     +----------------------------+
-|   PagerDuty   | <-- | PagerDuty MCP Server  | <-- |   LangGraph MCP Adapter    |
+|   Backstage   | <-- | Backstage MCP Server  | <-- |   LangGraph MCP Adapter    |
 +---------------+     +-----------------------+     +----------------------------+
 ```
 
@@ -21,7 +21,7 @@ This project implements an AI Agent that interacts with PagerDuty using the [lan
 
 - Built using **LangGraph + LangChain MCP Adapter**
 - Uses **Azure OpenAI GPT-4o** as the LLM backend
-- Communicates with PagerDuty through a dedicated PagerDuty MCP agent
+- Communicates with Backstage through dedicated MCP agents
 - Deployed with [Workflow Server Manager (WFSM)](https://github.com/agntcy/workflow-srv-mgr)
 - Compatible with **ACP protocol** for multi-agent orchestration
 
@@ -40,11 +40,8 @@ values:
   AZURE_OPENAI_API_VERSION: <COPY YOUR AZURE OPENAI API VERSION>
   AZURE_OPENAI_DEPLOYMENT: <COPY YOUR AZURE OPENAI DEPLOYMENT>
   AZURE_OPENAI_ENDPOINT: <COPY YOUR AZURE OPENAI ENDPOINT>
-  PAGERDUTY_TOKEN: <COPY YOUR PAGERDUTY API TOKEN>
-  PAGERDUTY_API_TOKEN: <COPY YOUR PAGERDUTY API TOKEN>
-  PAGERDUTY_API_URL: <COPY YOUR PAGERDUTY API URL>
-  PAGERDUTY_API_KEY: <COPY YOUR PAGERDUTY API TOKEN>
-
+  BACKSTAGE_TOKEN: <COPY YOUR BACKSTAGE API TOKEN>
+  BACKSTAGE_API_URL: <COPY YOUR BACKSTAGE API URL>
 ```
 
 #### Step 2. Start ACP Workflow Server Manager
@@ -53,7 +50,7 @@ values:
 make run-acp
 ```
 
-### 🔁 Test with PagerDuty Client
+### 🔁 Test with Client
 
 #### Step 1: Add Environment Variables to `.env`
 
@@ -77,7 +74,7 @@ make run-client
 
 ```
 > Your Question: how can you help?
-Agent: I can assist you with managing your PagerDuty operations, including:
+Agent: I can assist you with managing your operations, including:
 
 1. **Incident Management**: Create, update, resolve, and acknowledge incidents.
 
