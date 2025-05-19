@@ -10,7 +10,6 @@ from typing import Any, Dict
 
 from langchain_openai import AzureChatOpenAI
 from langchain_mcp_adapters.client import MultiServerMCPClient
-from langchain.chains.summarize import load_summarize_chain
 from langgraph.prebuilt import create_react_agent
 from pydantic import SecretStr
 from langchain_core.runnables import RunnableConfig
@@ -130,7 +129,8 @@ async def _async_backstage_agent(state: AgentState, config: RunnableConfig) -> D
 
     logger.info(f"Launching MCP server at: {server_path}")
 
-    async with MultiServerMCPClient(
+    # --- Updated usage: no async with on client ---
+    client = MultiServerMCPClient(
         {
             "backstage": {
                 "command": "uv",
@@ -142,11 +142,15 @@ async def _async_backstage_agent(state: AgentState, config: RunnableConfig) -> D
                 "transport": "stdio",
             }
         }
-    ) as client:
-        agent = create_react_agent(model, client.get_tools())
-        llm_result = await agent.ainvoke({"messages": human_message_with_memory})
-        logger.info("LLM response received")
-        logger.debug(f"LLM result: {llm_result}")
+    )
+    # Fetch tools from the client
+    tools = await client.get_tools()
+
+    # Create the agent with the retrieved tools
+    agent = create_react_agent(model, tools)
+    llm_result = await agent.ainvoke({"messages": human_message_with_memory})
+    logger.info("LLM response received")
+    logger.debug(f"LLM result: {llm_result}")
 
     # Try to extract meaningful content from the LLM result
     ai_content = None
