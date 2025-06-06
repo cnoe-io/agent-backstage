@@ -3,19 +3,17 @@
 import logging
 from typing import Dict, Any, Optional, List
 from pydantic import BaseModel
-from ..api.client import make_api_request
+from mcp_catalog.api.client import make_api_request
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("mcp_tools")
 
 
-async def create_location(dry_run: Optional[str] = None) -> Dict[str, Any]:
+async def CreateLocation(dryRun: Optional[str] = None) -> Dict[str, Any]:
     """
     
-    
     Create a location for a given target.
-    
     Returns:
         API response data
     """
@@ -23,8 +21,8 @@ async def create_location(dry_run: Optional[str] = None) -> Dict[str, Any]:
     params = {}
     data = None
     # Add parameters to request
-    if dry_run is not None:
-        params["dryRun"] = dry_run
+    if dryRun is not None:
+        params["dryRun"] = dryRun
     success, response = await make_api_request(
         "/locations",
         method="POST",
@@ -36,12 +34,10 @@ async def create_location(dry_run: Optional[str] = None) -> Dict[str, Any]:
         return {"error": response.get('error', 'Request failed')}
     return response
 
-async def get_locations() -> Dict[str, Any]:
+async def GetLocations() -> Dict[str, Any]:
     """
     
-    
     Get all locations
-    
     Returns:
         API response data
     """

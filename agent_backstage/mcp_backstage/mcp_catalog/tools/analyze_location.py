@@ -1,31 +1,29 @@
-"""Tools for /validate-entity operations"""
+"""Tools for /analyze-location operations"""
 
 import logging
 from typing import Dict, Any, Optional, List
 from pydantic import BaseModel
-from ..api.client import make_api_request
+from mcp_catalog.api.client import make_api_request
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("mcp_tools")
 
 
-async def validate_entity() -> Dict[str, Any]:
+async def AnalyzeLocation() -> Dict[str, Any]:
     """
     
-    
-    Validate that a passed in entity has no errors in schema.
-    
+    Validate a given location.
     Returns:
         API response data
     """
-    logger.debug(f"Making POST request to /validate-entity")
+    logger.debug(f"Making POST request to /analyze-location")
     params = {}
     data = None
     # Add parameters to request
     
     success, response = await make_api_request(
-        "/validate-entity",
+        "/analyze-location",
         method="POST",
         params=params,
         data=data

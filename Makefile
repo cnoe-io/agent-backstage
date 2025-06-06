@@ -65,7 +65,7 @@ run: build install
 	. .venv/bin/activate && . .env && python3 -m agent_backstage
 
 run-acp: setup-venv build install
-	. .venv/bin/activate && wfsm deploy -m ./deploy/acp/agent.json -e ./deploy/acp/agent-env.yaml
+	. .venv/bin/activate && set -a && . .env && set +a && wfsm deploy -m ./deploy/acp/agent.json 
 
 run-client: build install
 	@echo "Running the client..."

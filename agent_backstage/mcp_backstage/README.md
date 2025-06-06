@@ -2,19 +2,33 @@
 
 This is an automatically generated Model Context Protocol (MCP) server based on an OpenAPI specification.
 
+## Prerequisites
+
+- Python 3.8 or higher
+- [Install Poetry](https://python-poetry.org/docs/#installation)
+- Setup a virtual environment
+```
+poetry config virtualenvs.in-project true
+poetry install
+```
+
+
 ## Setup
 
 1. Copy `.env.example` to `.env` and fill in your API credentials:
+
 ```bash
 cp .env.example .env
 ```
 
 2. Install dependencies:
+
 ```bash
 poetry install
 ```
 
 3. Run the server:
+
 ```bash
 poetry run python -m server
 ```

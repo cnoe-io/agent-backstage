@@ -1,31 +1,22 @@
-"""Backstage API client
+"""API client for making requests to the service"""
 
-This module provides a client for interacting with the Backstage API.
-It handles authentication, request formatting, and response parsing.
-"""
-
-import os
 import logging
 from typing import Optional, Dict, Tuple, Any
 import httpx
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
 
 # Constants
-BACKSTAGE_API_URL = os.getenv("BACKSTAGE_URL")
-DEFAULT_TOKEN = os.getenv("BACKSTAGE_TOKEN")
+API_URL = "https://api.pagerduty.com"
+DEFAULT_TOKEN = "your_api_key_here"
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger("backstage_mcp")
+logger = logging.getLogger("mcp_api")
 
 # Log token presence but not the token itself
 if DEFAULT_TOKEN:
-    logger.info("Default token found in environment variables")
+    logger.info("Default token is hardcoded and present.")
 else:
-    logger.warning("No default token found in environment variables")
+    logger.warning("No default token is set.")
 
 async def make_api_request(
     path: str,
@@ -36,7 +27,7 @@ async def make_api_request(
     timeout: int = 30,
 ) -> Tuple[bool, Dict[str, Any]]:
     """
-    Make a request to the Backstage API
+    Make a request to the API
 
     Args:
         path: API path to request (without base URL)
@@ -50,7 +41,7 @@ async def make_api_request(
         Tuple of (success, data) where data is either the response JSON or an error dict
     """
     logger.debug(f"Making {method} request to {path}")
-    
+
     if not token:
         logger.debug("No token provided, using default token")
         token = DEFAULT_TOKEN
@@ -59,34 +50,22 @@ async def make_api_request(
         logger.error("No token available - neither provided nor found in environment")
         return (
             False,
-            {
-                "error": "Token is required. Please set the BACKSTAGE_TOKEN environment variable."
-            },
-        )
-
-    if not BACKSTAGE_API_URL:
-        logger.error("No API URL found in environment")
-        return (
-            False,
-            {
-                "error": "API URL is required. Please set the BACKSTAGE_URL environment variable."
-            },
+            {"error": "Token is required. Please set the API_KEY environment variable."},
         )
 
     try:
         headers = {
-            "Authorization": f"Bearer {token}",
-            "Accept": "application/json",
+            "Authorization": f"Token token={token}",
+            "Accept": "application/vnd.pagerduty+json;version=2",
             "Content-Type": "application/json",
         }
-        
         logger.debug(f"Request headers prepared (Authorization header masked)")
         logger.debug(f"Request parameters: {params}")
         if data:
             logger.debug(f"Request data: {data}")
 
         async with httpx.AsyncClient(timeout=timeout) as client:
-            url = f"{BACKSTAGE_API_URL}/{path}"
+            url = f"{API_URL}/{path}"
             logger.debug(f"Full request URL: {url}")
 
             # Map HTTP methods to client methods
@@ -104,21 +83,17 @@ async def make_api_request(
 
             # Make the request
             logger.debug(f"Executing {method} request")
-            
             # Only include json parameter for methods that use request body
             request_kwargs = {
                 "headers": headers,
                 "params": params,
             }
-            
             if method in ["POST", "PUT", "PATCH"]:
                 request_kwargs["json"] = data
-                
             response = await method_map[method](
                 url,
                 **request_kwargs
             )
-            
             logger.debug(f"Response status code: {response.status_code}")
 
             # Handle different response codes
@@ -148,7 +123,6 @@ async def make_api_request(
                     error_text = response.text[:200] if response.text else ""
                     logger.error(f"Error response (not JSON): {error_text}")
                     return (False, {"error": f"{error_message} - {error_text}"})
-
     except httpx.TimeoutException:
         logger.error(f"Request timed out after {timeout} seconds")
         return (False, {"error": f"Request timed out after {timeout} seconds"})

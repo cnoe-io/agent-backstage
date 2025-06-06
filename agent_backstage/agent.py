@@ -1,107 +1,144 @@
-# Copyright 2025 CNOE
+# Copyright CNOE Contributors (https://cnoe.io)
 # SPDX-License-Identifier: Apache-2.0
 
-import logging
 import asyncio
+import importlib.util
+import logging
 import os
 from pathlib import Path
-import importlib.util
 from typing import Any, Dict
 
-from langchain_openai import AzureChatOpenAI
+from langchain_core.runnables import RunnableConfig
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langgraph.prebuilt import create_react_agent
-from pydantic import SecretStr
-from langchain_core.runnables import RunnableConfig
+from typing import Literal
+from langgraph.checkpoint.memory import MemorySaver
+from pydantic import BaseModel
 
-from .state import AgentState, Message, MsgType, OutputState
+from agent_backstage.state import AgentState, Message, MsgType, OutputState
+from cnoe_agent_utils import LLMFactory
 
 logger = logging.getLogger(__name__)
 
-class Memory:
-    """
-    A class to manage short-term memory for the agent.
-    """
-    def __init__(self, max_size=5):
-        self.max_size = max_size
-        self.memory = []
-
-    def add_interaction(self, user_input, agent_response):
-        """
-        Add a new interaction to memory.
-        
-        :param user_input: The user's input.
-        :param agent_response: The agent's response.
-        """
-        self.memory.append({"user_input": user_input, "agent_response": agent_response})
-        # Ensure memory does not exceed max size
-        if len(self.memory) > self.max_size:
-            self.memory.pop(0)
-
-    def get_memory(self):
-        """
-        Retrieve the current memory.
-        
-        :return: A list of recent interactions.
-        """
-        return self.memory
-
-    def clear_memory(self):
-        """
-        Clear all stored memory.
-        """
-        self.memory = []
-
-# Initialize the Azure OpenAI model
-api_key = os.getenv("AZURE_OPENAI_API_KEY")
-if not api_key:
-    raise ValueError("AZURE_OPENAI_API_KEY must be set as an environment variable.")
-
-azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
-if not azure_endpoint:
-    raise ValueError("AZURE_OPENAI_ENDPOINT must be set as an environment variable.")
-
-backstage_url = os.getenv("BACKSTAGE_URL")
-if not backstage_url:
-    raise ValueError("BACKSTAGE_URL must be set as an environment variable.")
-
-backstage_token = os.getenv("BACKSTAGE_TOKEN")
-if not backstage_token:
-    raise ValueError("BACKSTAGE_TOKEN must be set as an environment variable.")
-
-model = AzureChatOpenAI(
-    api_key=SecretStr(api_key),
-    azure_endpoint=azure_endpoint,
-    model="gpt-4o",
-    openai_api_type="azure_openai",
-    api_version="2024-07-01-preview",
-    temperature=0,
-    max_retries=10,
-    seed=42
-)
-
 # Find installed path of the backstage_mcp sub-module
-spec = importlib.util.find_spec("agent_backstage.backstage_mcp.server")
+spec = importlib.util.find_spec("agent_backstage.protocol_bindings.mcp_server.mcp_backstage.server")
 if not spec or not spec.origin:
-    raise ImportError("Cannot find agent_backstage.backstage_mcp.server module")
+    raise ImportError("Cannot find agent_backstage.protocol_bindings.mcp_server.mcp_backstage.server module")
 
 server_path = str(Path(spec.origin).resolve())
 
-# Initialize memory
-memory = Memory()
+async def create_agent(prompt=None, response_format=None):
+    memory = MemorySaver()
+
+    # Find installed path of the backstage_mcp sub-module
+    spec = importlib.util.find_spec("agent_backstage.protocol_bindings.mcp_server.mcp_backstage.server")
+    if not spec or not spec.origin:
+        raise ImportError("Cannot find agent_backstage.protocol_bindings.mcp_server.server module")
+
+    server_path = str(Path(spec.origin).resolve())
+
+    logger.info(f"Launching Backstage LangGraph Agent with MCP server adapter at: {server_path}")
+
+    backstage_token = os.getenv("BACKSTAGE_TOKEN")
+    if not backstage_token:
+        raise ValueError("BACKSTAGE_TOKEN must be set as an environment variable.")
+
+    backstage_url = os.getenv("BACKSTAGE_URL")
+    if not backstage_url:
+        raise ValueError("BACKSTAGE_URL must be set as an environment variable.")
+
+    agent = None
+    async with MultiServerMCPClient(
+        {
+            "backstage": {
+                "command": "uv",
+                "args": ["run", server_path],
+                "env": {
+                    "BACKSTAGE_TOKEN": backstage_token,
+                    "BACKSTAGE_URL": backstage_url
+                },
+                "transport": "stdio",
+            }
+        }
+    ) as client:
+        if prompt is None and response_format is None:
+            agent = create_react_agent(
+                LLMFactory().get_llm(),
+                tools=await client.get_tools(),
+                checkpointer=memory
+            )
+        else:
+            agent = create_react_agent(
+                LLMFactory().get_llm(),
+                tools=await client.get_tools(),
+                checkpointer=memory,
+                prompt=prompt,
+                response_format=response_format
+            )
+    return agent
+
+class ResponseFormat(BaseModel):
+    """Respond to the user in this format."""
+
+    status: Literal['input_required', 'completed', 'error'] = 'input_required'
+    message: str
+
+def create_agent_sync(prompt, response_format):
+    memory = MemorySaver()
+    backstage_token = os.getenv("BACKSTAGE_TOKEN")
+    if not backstage_token:
+        raise ValueError("BACKSTAGE_TOKEN must be set as an environment variable.")
+
+    backstage_url = os.getenv("BACKSTAGE_URL")
+    if not backstage_url:
+        raise ValueError("BACKSTAGE_URL must be set as an environment variable.")
+
+    client = MultiServerMCPClient(
+        {
+            "backstage": {
+                "command": "uv",
+                "args": ["run", server_path],
+                "env": {
+                    "BACKSTAGE_TOKEN": backstage_token,
+                    "BACKSTAGE_URL": backstage_url
+                },
+                "transport": "stdio",
+            }
+        }
+    )
+    tools = client.get_tools()
+
+    model = LLMFactory().get_llm()
+    return create_react_agent(
+        model,
+        tools=tools,
+        checkpointer=memory,
+        prompt=prompt,
+        response_format=(response_format, ResponseFormat),
+    )
 
 # Setup the Backstage MCP Client and create React Agent
 async def _async_backstage_agent(state: AgentState, config: RunnableConfig) -> Dict[str, Any]:
+    backstage_token = os.getenv("BACKSTAGE_TOKEN")
+    if not backstage_token:
+        raise ValueError("BACKSTAGE_TOKEN must be set as an environment variable.")
+
+    backstage_url = os.getenv("BACKSTAGE_URL")
+    if not backstage_url:
+        raise ValueError("BACKSTAGE_URL must be set as an environment variable.")
+
+    model = LLMFactory().get_llm()
+
     args = config.get("configurable", {})
     logger.debug(f"enter --- state: {state.model_dump_json()}, config: {args}")
 
-    if hasattr(state.backstage_input, "messages"):
-        messages = getattr(state.backstage_input, "messages")
-    elif "messages" in state.backstage_input:
-        messages = [Message.model_validate(m) for m in state.backstage_input["messages"]]
+    if hasattr(state.input, "messages"):
+        messages = getattr(state.input, "messages")
+    elif "messages" in state.input:
+        messages = [Message.model_validate(m) for m in state.input["messages"]]
     else:
         messages = []
- 
+
     if messages is not None:
         # Get last human message
         human_message = next(
@@ -111,44 +148,51 @@ async def _async_backstage_agent(state: AgentState, config: RunnableConfig) -> D
         if human_message is not None:
             human_message = human_message.content
 
-        # Retrieve memory and include it in the context
-        recent_memory = memory.get_memory()
-        logger.debug(f"Recent memory: {recent_memory}")
-
-        # Format memory and current message to match expected structure
-        memory_content = "\n".join(
-            [f"User: {interaction['user_input']}\nAgent: {interaction['agent_response']}" for interaction in recent_memory]
-        )
-        combined_message = f"{memory_content}\nCurrent: {human_message}" if memory_content else human_message
-
-        # Construct the message with required keys
-        human_message_with_memory = {
-            "role": "user",
-            "content": combined_message
-        }
-
     logger.info(f"Launching MCP server at: {server_path}")
 
-    # --- Updated usage: no async with on client ---
     client = MultiServerMCPClient(
         {
             "backstage": {
                 "command": "uv",
                 "args": ["run", server_path],
                 "env": {
-                    "BACKSTAGE_URL": backstage_url,
-                    "BACKSTAGE_TOKEN": backstage_token
+                    "BACKSTAGE_TOKEN": backstage_token,
+                    "BACKSTAGE_URL": backstage_url
                 },
                 "transport": "stdio",
             }
         }
     )
-    # Fetch tools from the client
     tools = await client.get_tools()
+    memory = MemorySaver()
+    agent = create_react_agent(
+        model,
+        tools,
+        checkpointer=memory,
+        prompt=(
+            "You are an expert assistant for Backstage.io, a developer portal platform. "
+            "Your role is to help users manage and interact with Backstage's software catalog and its entities. "
+            "You have access to the Backstage API and can perform actions such as:\n"
+            "- Listing, describing, and getting details of components, systems, and other entities\n"
+            "- Creating new entities in the software catalog\n"
+            "- Updating existing entities\n"
+            "- Managing relationships between entities\n"
+            "- Providing information about Backstage's features and capabilities\n"
+            "- Explaining Backstage concepts and best practices\n"
+            "When responding, be concise, accurate, and actionable. "
+            "If a user asks for an action, confirm before proceeding if the action is potentially disruptive. "
+            "If you need more information, ask clarifying questions. "
+            "Always format your responses clearly and include relevant details from the Backstage API when possible. "
+            "Do not answer questions unrelated to Backstage. "
+            "For any create, update, or delete operation, always confirm with the user before proceeding."
+        )
+    )
+    input_message = ''.join([m.content for m in messages])
+    logger.info("*"*80)
+    logger.info(f"Input message: {input_message}")
+    logger.info("*"*80)
+    llm_result = await agent.ainvoke({"messages": input_message})
 
-    # Create the agent with the retrieved tools
-    agent = create_react_agent(model, tools)
-    llm_result = await agent.ainvoke({"messages": human_message_with_memory})
     logger.info("LLM response received")
     logger.debug(f"LLM result: {llm_result}")
 
@@ -180,10 +224,7 @@ async def _async_backstage_agent(state: AgentState, config: RunnableConfig) -> D
 
     logger.debug(f"Final output messages: {output_messages}")
 
-    # Store the interaction in memory
-    memory.add_interaction(user_input=human_message, agent_response=ai_content)
-
-    return {"backstage_output": OutputState(messages=messages + output_messages)}
+    return {"output": OutputState(messages=messages + output_messages)}
 
 # Sync wrapper for workflow server
 def agent_backstage(state: AgentState, config: RunnableConfig) -> Dict[str, Any]:

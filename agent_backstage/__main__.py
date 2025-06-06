@@ -1,45 +1,81 @@
-# Copyright 2025 CNOE
+# Copyright CNOE Contributors (https://cnoe.io)
 # SPDX-License-Identifier: Apache-2.0
 
-import asyncio
-import logging
-import os
-from typing import Dict, Any
+import click
+import httpx
+from dotenv import load_dotenv
 
-from .langgraph import create_backstage_graph
-from .state import AgentState, Message, MsgType
+from agent_backstage.protocol_bindings.a2a_server.agent import BackstageAgent # type: ignore[import-untyped]
+from agent_backstage.protocol_bindings.a2a_server.agent_executor import BackstageAgentExecutor # type: ignore[import-untyped]
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from a2a.server.apps import A2AStarletteApplication
+from a2a.server.request_handlers import DefaultRequestHandler
+from a2a.server.tasks import InMemoryPushNotifier, InMemoryTaskStore
+from a2a.types import (
+    AgentCapabilities,
+    AgentCard,
+    AgentSkill,
+)
 
-async def run_backstage_agent():
-    """Main entry point for the Backstage agent."""
-    # Create the workflow graph
-    graph = create_backstage_graph()
+from starlette.middleware.cors import CORSMiddleware
 
-    # Initialize the state
-    state = {
-        "backstage": AgentState(
-            backstage_input={
-                "messages": [
-                    Message(
-                        type=MsgType.human,
-                        content="Hello, I need help with Backstage."
-                    )
-                ]
-            }
-        )
-    }
+load_dotenv()
 
-    # Run the workflow
-    result = await graph.ainvoke(state)
-    logger.info("Workflow completed")
-    logger.debug(f"Result: {result}")
 
-def main():
-    """Entry point for the CLI."""
-    asyncio.run(run_backstage_agent())
+@click.command()
+@click.option('--host', 'host', default='localhost')
+@click.option('--port', 'port', default=10000)
+def main(host: str, port: int):
+    client = httpx.AsyncClient()
+    request_handler = DefaultRequestHandler(
+        agent_executor=BackstageAgentExecutor(),
+        task_store=InMemoryTaskStore(),
+        push_notifier=InMemoryPushNotifier(client),
+    )
 
-if __name__ == "__main__":
+    server = A2AStarletteApplication(
+        agent_card=get_agent_card(host, port), http_handler=request_handler
+    )
+    app = server.build()
+
+    # Add CORSMiddleware to allow requests from any origin (disables CORS restrictions)
+    app.add_middleware(
+          CORSMiddleware,
+          allow_origins=["*"],  # Allow all origins
+          allow_methods=["*"],  # Allow all HTTP methods (GET, POST, etc.)
+          allow_headers=["*"],  # Allow all headers
+    )
+
+    import uvicorn
+    uvicorn.run(app, host=host, port=port)
+
+
+def get_agent_card(host: str, port: int):
+    """Returns the Agent Card for the Backstage CRUD Agent."""
+    capabilities = AgentCapabilities(streaming=True, pushNotifications=True)
+    skill = AgentSkill(
+        id='backstage',
+        name='Backstage Operations',
+        description='Performs Create, Read, Update, and Delete operations on Backstage entities.',
+        tags=['backstage', 'catalog', 'software-catalog', 'devops'],
+        examples=[
+            'Create a new component in Backstage.',
+            'Get the details of the "frontend" component.',
+            'Update the owner of the "backend" component.',
+            'Delete the "test-component" from Backstage.'
+        ],
+    )
+    return AgentCard(
+        name='Backstage CRUD Agent',
+        description='Agent for managing Backstage entities with CRUD operations.',
+        url=f'http://{host}:{port}/',
+        version='1.0.0',
+        defaultInputModes=BackstageAgent.SUPPORTED_CONTENT_TYPES,
+        defaultOutputModes=BackstageAgent.SUPPORTED_CONTENT_TYPES,
+        capabilities=capabilities,
+        skills=[skill]
+    )
+
+
+if __name__ == '__main__':
     main() 
